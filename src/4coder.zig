@@ -1,3 +1,7 @@
+pub const Major = 4;
+pub const Minor = 0;
+pub const Patch = 28;
+
 pub const ApplicationLink = @OpaqueType();
 pub const Bool32 = i32;
 pub const Color = u32;
@@ -41,9 +45,9 @@ pub const CommandId = enum(u64) {
 
 pub const MemoryProtectFlags = u32;
 pub const MemoryProtect = struct {
-    pub const Read: MemoryProtectFlags = 0x1,
-    pub const Write: MemoryProtectFlags = 0x2,
-    pub const Execute: MemoryProtectFlags = 0x4,
+    pub const Read: MemoryProtectFlags = 0x1;
+    pub const Write: MemoryProtectFlags = 0x2;
+    pub const Execute: MemoryProtectFlags = 0x4;
 };
 
 pub const UserInputTypeId = enum(i32) {
@@ -181,14 +185,13 @@ pub const ViewSplitPosition = enum(i32) {
 };
 
 pub const KeyCode = u32;
-pub const KeyModifier = u8;
 
 pub const KeyEventData = extern struct {
     keycode: KeyCode,
     character: KeyCode,
     character_no_caps_lock: KeyCode,
     // Enum array plz?
-    modifiers: [@typeInfo(KeyModifierIndex).Enum.fields.len],
+    modifiers: [@typeInfo(KeyModifierIndex).Enum.fields.len]i8,
 };
 
 pub const MouseState = extern struct {
@@ -326,7 +329,7 @@ pub const Marker = extern struct {
 };
 
 pub const MarkerHandle = *@OpaqueType();
-pub const MarkerDeleteCallback = extern fn(*Application_Links, MarkerHandle, *c_void, u32);
+pub const MarkerDeleteCallback = extern fn(*Application_Links, MarkerHandle, *c_void, u32) c_void;
 
 pub const I32Rect = extern struct {
     x0: i32,
@@ -379,8 +382,47 @@ pub const ThemeColor = extern struct {
     color: Color,
 };
 
-pub const Theme {
-    colors: [???]Color,
+// From 4coder_generated/style.h
+pub const StyleTag = enum {
+    Bar,
+    BarActive,
+    Base,
+    Pop1,
+    Pop2,
+    Back,
+    Margin,
+    MarginHover,
+    MarginActive,
+    ListItem,
+    ListItemHover,
+    ListItemActive,
+    Cursor,
+    AtCursor,
+    Highlight,
+    AtHighlight,
+    Mark,
+    Default,
+    Comment,
+    Keyword,
+    StrConstant,
+    CharConstant,
+    IntConstant,
+    FloatConstant,
+    BoolConstant,
+    Preproc,
+    Include,
+    SpecialCharacter,
+    GhostCharacter,
+    HighlightJunk,
+    HighlightWhite,
+    Paste,
+    Undo,
+    NextUndo,
+};
+
+pub const Theme = extern struct {
+    // Enum array?
+    colors: [@typeInfo(StyleTag).Enum.fields.len]Color,
 };
 
 pub const AvailableFont = extern struct {
@@ -457,7 +499,7 @@ pub const CommandCallerHookFunction = extern fn(*ApplicationLinks, GenericComman
 pub const HookFunction = extern fn(*ApplicationLinks) i32;
 pub const OpenFileHookFunction = extern fn(*ApplicationLinks, BufferId) i32;
 pub const InputFilterFunction = extern fn(*MouseState) c_void;
-pub const ScrollRuleFunction = extern fn(f32, f32, *f32, *f32, i32, i32, f32)
+pub const ScrollRuleFunction = extern fn(f32, f32, *f32, *f32, i32, i32, f32) i32;
 
 pub const BufferNameConflictEntry = extern struct {
     buffer_id: BufferId,
@@ -472,7 +514,7 @@ pub const BufferNameConflictEntry = extern struct {
 
 pub const BufferNameResolverFunction = extern fn(*ApplicationLinks, [*]BufferNameConflictEntry, i32) c_void;
 pub const StartHookFunction = extern fn(*ApplicationLinks, [*][*]u8, i32) i32;
-pub const GetBindingDataFunction(*c_void, i32) i32;
+pub const GetBindingDataFunction = extern fn(*c_void, i32) i32;
 
 pub const MapId = enum(i32) {
     Global = 1 << 24,
@@ -483,7 +525,7 @@ pub const MapId = enum(i32) {
 
 pub const BindingUnit = extern struct {
     type: Type,
-    data: Data,
+    payload: Payload,
 
      pub const Type = enum(i32) {
         Header,
@@ -494,7 +536,7 @@ pub const BindingUnit = extern struct {
         Hook,
     };
 
-    pub const Data = extern union {
+    pub const Payload = extern union {
         header: Header,
         map_begin: MapBegin,
         map_inherit: MapInherit,
@@ -506,7 +548,7 @@ pub const BindingUnit = extern struct {
     pub const Header = extern struct {
         total_size: i32,
         user_map_count: i32,
-        error: i32,
+        err: i32,
     };
 
     pub const MapBegin = extern struct {
@@ -537,8 +579,11 @@ pub const BindingUnit = extern struct {
     };
 };
 
-pub const GetVersionFunction(i32, i32, i32) i32;
+pub const GetVersionFunction = extern fn(i32, i32, i32) i32;
 
+export fn get_alpha_4coder_version(maj: i32, min: i32, patch: i32) i32 {
+    return @boolToInt(maj == Major and min == Minor and patch == Patch);
+}
 
 
 
@@ -570,7 +615,7 @@ pub const BindHelper = struct {
             .data = BindingUnit.Data{ .header = BindingUnit.Header{
                 .total_size = 0,
                 .user_map_count = 0,
-                .error = 0,
+                .err = 0,
             }},
         };
         
